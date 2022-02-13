@@ -1,149 +1,52 @@
 #include <stdio.h>
 #include <stdint.h>
-#define BUFFER_SIZE 5
+#include "ringBuffer.h"
+//#define BUFFER_SIZE 10
 
-typedef struct
-{
-  int readIndex;
-  int writeIndex;
-  int isEmpty;
-  int isFull;
-  int8_t data[BUFFER_SIZE];
-}sCircularBuffer;
-
-void init(sCircularBuffer *apArray)
-{
-  apArray->readIndex  = 0;
-  apArray->writeIndex = 0;
-  apArray->isEmpty    = 1;
-  apArray->isFull     = 0;
-}
-//------------------------------------------------------------------------------
-int write(sCircularBuffer *apArray, int8_t aValue)
-{
-  if(apArray->isFull)
-  {
-	printf("Buffer is full\n");
-	return -1;
-  }
-  if(apArray->writeIndex >= BUFFER_SIZE)
-    apArray->writeIndex = 0;
-
-  if(apArray->isEmpty)
-  {
-    apArray->isEmpty = 0;
-    apArray->data[apArray->writeIndex++] = aValue;
-
-    if (apArray->writeIndex == apArray->readIndex)
-      apArray->isFull  = 1;
-    return 1;
-  }
-
-  apArray->data[apArray->writeIndex++] = aValue;
-
-  if (apArray->writeIndex == apArray->readIndex)
-    apArray->isFull  = 1;
-
-  return 1;
-}
-//------------------------------------------------------------------------------
-char read(sCircularBuffer *apArray)
-{
-  if(apArray->isEmpty)
-  {
-	printf("Buffer is empty\n");
-    return -1;
-  }
-  apArray->isFull = 0;
-
-  if(apArray->readIndex >= BUFFER_SIZE)
-    apArray->readIndex = 0;
-
-  char res = apArray->data[apArray->readIndex++];
-
-  if(apArray->readIndex == apArray->writeIndex)
-    apArray->isEmpty = 1;
-
-  return  res;
-}
-//------------------------------------------------------------------------------
-void clear(sCircularBuffer *apArray)
-{
-  apArray->isEmpty    = 1;
-  apArray->isFull     = 0;
-  apArray->writeIndex = 0;
-  apArray->readIndex  = 0;
-}
-//------------------------------------------------------------------------------
-int isEmpty(sCircularBuffer *apArray)
-{
-  return apArray->isEmpty;
-}
-//------------------------------------------------------------------------------
-int isFull(sCircularBuffer *apArray)
-{
-  return apArray->isFull;
-}
-
-void display(sCircularBuffer *apArray)
-{
-	int i;
-	//if (apArray->readIndex <= apArray->writeIndex)
-	//{
-		for (i = 0; i <= BUFFER_SIZE - 1; i++)
-			printf("%d ", apArray->data[i]);
-	//}		
-	/*
-	else
-	{
-		for (i = apArray->readIndex; i <= BUFFER_SIZE - 1; i++)
-			printf("%3d", apArray->data[i]);
-		for(i = 0; i <= apArray->writeIndex; i++)
-			printf("%3d", apArray->data[i]);
-	}
-	*/
-	printf("\n");
-}
-
-//------------------------------------------------------------------------------
 int main()
 {
-	
-  //printf("readIndex: %d\n", buff.readIndex);
-  //printf("writeIndex: %d\n", buff.writeIndex);
-  //display(&buff); //╨Т╨л╨Т╨Ю╨Ф ╨С╨г╨д╨Х╨а╨Р
   sCircularBuffer buff;
-  int r;
-  init(&buff);
+  int buffer_size = 10;
+  int8_t r;
+  printf("\nПроинициализируем буффер и выведем его, получим некорректные значения внутри: \n");
+  init(&buff, buffer_size);
   display(&buff);
+  
+  printf("Теперь проверим функцию записи в буффер, добавив 1 и 2 и снова выведем значения: \n");
   write(&buff, 1);
+  write(&buff, 2);
+  display(&buff);
+  
+  printf("Далее добавим блок элементов, например 8 троек и снова выведем наш буфер: \n");
+  int8_t block[] = {3, 3, 3, 3, 3, 3, 3, 3};
+  size_t bl_size = sizeof(block)/sizeof(block[0]);
+  writeBlock(&buff, bl_size, block);
+  display(&buff);
+  
+  printf("Теперь попробуем считать значение из буфера и вывести его на экран, также выведем индексы, отвечающие за запись и чтение: \n");
   r = read(&buff);
-  display(&buff); //╨Т╨л╨Т╨Ю╨Ф ╨С╨г╨д╨Х╨а╨Р
+  printf("Считанный элемент равен %d\n", r);
   printf("readIndex: %d\n", buff.readIndex);
   printf("writeIndex: %d\n", buff.writeIndex);
-  printf("EmptyFlag = %d\n", buff.isEmpty);
-  printf("FullFlag = %d\n", buff.isFull);
+  printf("Индекс чтения равен 1, так как считали мы один элемент, а индекс записи 10, так как именно столько элементов мы записали \n");
   
-  write(&buff, 1);
-  display(&buff); //╨Т╨л╨Т╨Ю╨Ф ╨С╨г╨д╨Х╨а╨Р
-  printf("readIndex: %d\n", buff.readIndex);
-  printf("writeIndex: %d\n", buff.writeIndex);
-  printf("EmptyFlag = %d\n", buff.isEmpty);
-  printf("FullFlag = %d\n", buff.isFull);
-  
-  write(&buff, 1);
-  
-  write(&buff, 1);
-  
-  write(&buff, 1);
-  write(&buff, 3);
-  
+  printf("\nТеперь попробуем записать числа 4 и 5 в наш буфер и снова выведем его: \n");
+  write(&buff, 4);
+  write(&buff, 5);
   display(&buff);
-  printf("readIndex: %d\n", buff.readIndex);
-  printf("writeIndex: %d\n", buff.writeIndex);
-  printf("EmptyFlag = %d\n", buff.isEmpty);
-  printf("FullFlag = %d\n", buff.isFull);
-  write(&buff, 3);
+  printf("Видим буффер, в котором нет добавленной 5, а также сообщение, о том что буфер полон. \n");
+  
+  printf("\nПопробуем считать элемент, а затем снова попробуем добавить значение 5, теперь всё получится \n");
+  r = read(&buff);
+  printf("Считанный элемент равен %d\n", r);
+  write(&buff, 5);
   display(&buff);
+  
+  printf("Теперь считаем все элементы из буфера и получим сообщение о том, что буфер пуст \n");
+  for(int i = 0; i <= buffer_size; i++)
+	r = read(&buff);
+
+  printf("\nКонец тестирования\n");
+  
   return 0;
 }
