@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <malloc.h>
-#define BUFFER_SIZE 10
+#include <pthread.h>
+
 typedef struct
 {
   int readIndex;
@@ -14,17 +15,17 @@ typedef struct
   int isFull;
   int8_t size;
   int8_t *data;
-  //int8_t *data = (int8_t*)malloc(size + 1);
-  //int8_t data[size];
+  pthread_mutex_t mutex;
 }sCircularBuffer;
 
 void init(sCircularBuffer *buff, int size);
-int write(sCircularBuffer *buff, int8_t aValue);
+int write(sCircularBuffer *buff, int8_t value);
 void writeBlock(sCircularBuffer *buff, size_t bl_size, int8_t block[bl_size]);
 int8_t read(sCircularBuffer *buff);
 void clear(sCircularBuffer *buff);
 int isEmpty(sCircularBuffer *buff);
 int isFull(sCircularBuffer *buff);
+int8_t getCount(sCircularBuffer *buff);
 void display(sCircularBuffer *buff);
 //----------------------------------------------
 #endif /* RING_BUFFER_ */
